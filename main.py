@@ -10,16 +10,18 @@ import requests
 import re
 import psycopg2
 from apscheduler.schedulers.blocking import BlockingScheduler
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 scheduler = BlockingScheduler()
 
 def run_parser():
     conn = psycopg2.connect(
-        host="localhost",
-        dbname="ozon_tracker",
-        user="postgres",
-        password="Ghbdtn2019"
+        host=os.getenv("DB_HOST"),
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD")
     )
 
     cursor = conn.cursor()
