@@ -24,25 +24,42 @@ def init_webdriver():
             platform="Win32")
     return driver
 
-
-def save__product_snapshot(cursor, product_data):
+def save_product(cursor, product_data):
     cursor.execute(
         """
-        INSERT INTO search_snapshots (
+        INSERT INTO products (
             article,
             name,
             product_url,
-            price,
-            rating,
-            reviews_count,
-            collected_at
+            first_seen_at
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (article) DO NOTHING
         """,
         (
             product_data["article"],
             product_data["name"],
             product_data["url"],
+            product_data["collected_at"]
+        )
+    )
+
+def save__product_snapshot(cursor, product_data):
+    cursor.execute(
+        """
+        INSERT INTO search_snapshots_1 (
+            article,
+            position,
+            price,
+            rating,
+            reviews_count,
+            collected_at
+        )
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """,
+        (
+            product_data["article"],
+            product_data["position"],
             product_data["price"],
             product_data["rating"],
             product_data["reviews_count"],
@@ -153,8 +170,8 @@ def run_parser():
         article = re.search(r'\d{8,12}', url)[0]
 
         product_data = {
-        ##"position": position,  !!!! ее нет в БД!!!!
         "article": article,
+        "position": position,
         "name": name,
         "url": f'https://www.ozon.ru{url}',
         "price": price,
@@ -162,6 +179,7 @@ def run_parser():
         "reviews_count": reviews,
         "collected_at": collected_at
         }
+        save_product(cursor, product_data)
         save__product_snapshot(cursor, product_data)
 
         print(position, article)
@@ -180,7 +198,7 @@ def run_parser():
 scheduler.add_job(
     run_parser,
     "interval",
-    minutes=1
+    minutes=30
 )
 
 print("Планировщик запущен")
