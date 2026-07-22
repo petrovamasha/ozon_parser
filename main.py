@@ -18,10 +18,34 @@ load_dotenv()
 
 scheduler = BlockingScheduler()
 
+from selenium.webdriver.chrome.options import Options
+
 def init_webdriver():
-    driver = webdriver.Chrome()
-    stealth(driver, 
-            platform="Win32")
+    options = Options()
+
+    options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument(
+        "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/149.0.0.0 Safari/537.36")
+
+    driver = webdriver.Chrome(options=options)
+
+    stealth(
+        driver,
+        languages=["ru-RU", "ru"],
+        platform="Win32",
+        vendor="Google Inc."
+    )
+    print(driver.execute_script("""
+	return {
+        webdriver: navigator.webdriver,
+        platform: navigator.platform,
+        languages: navigator.languages
+	}
+    """))
     return driver
 
 def save_product(cursor, product_data):
@@ -95,6 +119,10 @@ def run_parser():
     print(driver.current_url)
     print(driver.title)
 
+    if "Antibot" in driver.title:
+        print("Ozon заблокировал сессию")
+        driver.quit()
+        return
     '''
     elem = driver.find_element(By.XPATH, "//input[@placeholder='Искать на Ozon']")
     elem.send_keys("помада")
@@ -195,11 +223,13 @@ def run_parser():
 
     driver.quit()
 
-scheduler.add_job(
+'''scheduler.add_job(
     run_parser,
     "interval",
-    minutes=30
+    minutes=1
 )
 
 print("Планировщик запущен")
 scheduler.start()
+'''
+run_parser()
